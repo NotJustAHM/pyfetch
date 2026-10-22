@@ -9,7 +9,7 @@ from pyfetch.downloader import download_video
 def main(
     url: Annotated[
         str,
-        typer.Argument(help="YouTube video URL"),
+        typer.Argument(help="YouTube video or playlist URL"),
     ],
     quality: Annotated[
         int,
@@ -18,7 +18,7 @@ def main(
             "-q",
             min=144,
             max=4320,
-            help="Maximum video resolution (e.g. 720)",
+            help="Maximum video resolution",
         ),
     ] = 720,
     output: Annotated[
@@ -29,8 +29,16 @@ def main(
             help="Directory where downloaded files are saved",
         ),
     ] = Path("downloads"),
+    playlist: Annotated[
+        bool,
+        typer.Option(
+            "--playlist",
+            "-p",
+            help="Download the entire playlist",
+        ),
+    ] = False,
 ) -> None:
-    """Download a YouTube video."""
+    """Download YouTube videos and playlists."""
     typer.echo("PyFetch")
     typer.echo("YouTube Downloader")
     typer.echo("")
@@ -39,6 +47,7 @@ def main(
         url=url,
         output_dir=str(output),
         quality=quality,
+        playlist=playlist,
     )
 
 
