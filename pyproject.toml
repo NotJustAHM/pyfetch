@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pyfetch = "pyfetch.main:app"
+pyfetch = "pyfetch.main:cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]
