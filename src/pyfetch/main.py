@@ -1,18 +1,33 @@
+import typer
+
 from pyfetch.downloader import download_video
 
 
-def main() -> None:
-    print("PyFetch")
-    print("YouTube Downloader")
+app = typer.Typer(
+    name="pyfetch",
+    help="A simple and beautiful CLI YouTube downloader.",
+    add_completion=False,
+)
 
-    url = input("\nEnter YouTube URL: ").strip()
 
-    if not url:
-        print("Error: URL cannot be empty.")
+@app.callback(invoke_without_command=True)
+def main(
+    url: str = typer.Argument(
+        None,
+        help="YouTube video URL",
+    ),
+) -> None:
+    """Download a YouTube video."""
+
+    if url is None:
         return
+
+    typer.echo("PyFetch")
+    typer.echo("YouTube Downloader")
+    typer.echo("")
 
     download_video(url)
 
 
 if __name__ == "__main__":
-    main()
+    app()
