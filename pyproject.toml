@@ -9,6 +9,9 @@ description = "A simple and beautiful CLI YouTube downloader"
 readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
+dependencies = [
+    "yt-dlp>=2025.01.01",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
