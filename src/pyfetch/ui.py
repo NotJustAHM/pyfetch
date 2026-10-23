@@ -19,9 +19,7 @@ def create_progress() -> Progress:
         TextColumn("[bold cyan]{task.description}"),
         BarColumn(),
         TextColumn("[progress.percentage]{task.percentage:>5.1f}%"),
-        DownloadColumn(),
-        TransferSpeedColumn(),
-        TimeRemainingColumn(),
+        TextColumn("{task.fields[detail]}"),
     )
 
 
@@ -40,3 +38,20 @@ def show_video_info(title: str, quality: int) -> None:
 def show_success(message: str = "Download completed") -> None:
     """Display a success message."""
     console.print(f"\n[bold green]✓ {message}[/bold green]")
+
+
+def show_playlist_info(
+    title: str,
+    total_videos: int,
+    quality: int,
+) -> None:
+    """Display playlist information."""
+    console.print(
+        Panel(
+            f"[bold white]{title}[/bold white]\n"
+            f"[cyan]Videos:[/cyan] {total_videos}\n"
+            f"[cyan]Quality:[/cyan] [yellow]{quality}p[/yellow]",
+            title="PyFetch — Playlist Downloader",
+            border_style="cyan",
+        )
+    )
