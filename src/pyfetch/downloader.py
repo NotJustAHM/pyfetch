@@ -1,19 +1,12 @@
 from pathlib import Path
 
 import yt_dlp
-from rich.console import Console
-from rich.progress import (
-    BarColumn,
-    DownloadColumn,
-    Progress,
-    TextColumn,
-    TimeRemainingColumn,
-    TransferSpeedColumn,
+
+from pyfetch.ui import (
+    create_progress,
+    show_success,
+    show_video_info,
 )
-from rich.panel import Panel
-
-
-console = Console()
 
 
 def download_video(
@@ -34,15 +27,7 @@ def download_video(
     else:
         output_template = str(output_path / "%(title)s.%(ext)s")
 
-    progress = Progress(
-        TextColumn("[bold cyan]{task.description}"),
-        BarColumn(),
-        TextColumn("[progress.percentage]{task.percentage:>5.1f}%"),
-        DownloadColumn(),
-        TransferSpeedColumn(),
-        TimeRemainingColumn(),
-    )
-
+    progress = create_progress()
     current_task = None
 
     def progress_hook(data: dict) -> None:
@@ -52,6 +37,7 @@ def download_video(
 
         if status == "downloading":
             downloaded = data.get("downloaded_bytes", 0)
+
             total = data.get("total_bytes") or data.get("total_bytes_estimate")
 
             if current_task is None:
@@ -60,24 +46,21 @@ def download_video(
                     total=total,
                 )
 
-            if total:
-                progress.update(
-                    current_task,
-                    total=total,
-                    completed=downloaded,
-                )
-            else:
-                progress.update(
-                    current_task,
-                    completed=downloaded,
-                )
+            progress.update(
+                current_task,
+                total=total,
+                completed=downloaded,
+            )
 
         elif status == "finished":
             if current_task is not None:
-                progress.update(
-                    current_task,
-                    completed=progress.tasks[current_task].total,
-                )
+                task = progress.tasks[current_task]
+
+                if task.total is not None:
+                    progress.update(
+                        current_task,
+                        completed=task.total,
+                    )
 
     options = {
         "outtmpl": output_template,
@@ -89,19 +72,22 @@ def download_video(
     }
 
     with yt_dlp.YoutubeDL(options) as ydl:
-        info = ydl.extract_info(url, download=False)
+        info = ydl.extract_info(
+            url,
+            download=False,
+        )
 
-        title = info.get("title", "Unknown")
-        console.print(
-            Panel(
-                f"[bold white]{title}[/bold white]\n"
-                f"[cyan]Video[/cyan] • [yellow]{quality}p[/yellow]",
-                title="PyFetch",
-                border_style="cyan",
-            )
+        title = info.get(
+            "title",
+            "Unknown",
+        )
+
+        show_video_info(
+            title=title,
+            quality=quality,
         )
 
         with progress:
             ydl.download([url])
 
-    console.print("\n[bold green]✓ Download completed[/bold green]")
+    show_success()
