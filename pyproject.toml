@@ -12,6 +12,7 @@ license = {text = "MIT"}
 dependencies = [
     "yt-dlp>=2025.01.01",
     "typer>=0.16.0",
+    "rich"
 ]
 
 [project.scripts]
