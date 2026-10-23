@@ -13,7 +13,11 @@ def download_video(
     output_path.mkdir(parents=True, exist_ok=True)
 
     if playlist:
-        output_template = str(output_path) + "/%(playlist_title)s/%(title)s.%(ext)s"
+        output_template = str(
+            output_path
+            / "%(playlist_title)s"
+            / "%(playlist_index)03d - %(title)s.%(ext)s"
+        )
     else:
         output_template = str(output_path / "%(title)s.%(ext)s")
 
