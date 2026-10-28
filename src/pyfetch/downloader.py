@@ -3,10 +3,14 @@ from pathlib import Path
 import yt_dlp
 
 from pyfetch.ui import (
-    create_progress,
-    show_success,
+    create_download_display,
+    show_download_start,
+    show_playlist_completed,
     show_playlist_info,
+    show_success,
+    show_video_completed,
     show_video_info,
+    update_download_display,
 )
 
 
@@ -28,14 +32,11 @@ def download_video(
     else:
         output_template = str(output_path / "%(title)s.%(ext)s")
 
-    progress = create_progress()
-
-    current_task = None
-    overall_task = None
-    active_index = None
+    current_index = None
+    total_videos = 1
     completed_indices = set()
-    total_videos = None
-    video_states = {}
+
+    live = create_download_display()
 
     def format_bytes(value: float | None) -> str:
         if value is None:
@@ -46,103 +47,81 @@ def download_video(
         for unit in ("B", "KB", "MB", "GB", "TB"):
             if size < 1024 or unit == "TB":
                 return f"{size:.1f} {unit}"
+
             size /= 1024
 
         return "Unknown size"
 
     def progress_hook(data: dict) -> None:
-        nonlocal current_task, overall_task, active_index
+        nonlocal current_index
+
         status = data.get("status")
         info_dict = data.get("info_dict") or {}
 
         index = info_dict.get("playlist_index", 1)
-        video_id = info_dict.get("id") or str(index)
         video_title = info_dict.get("title", "Downloading")
 
-        if status == "finished" and playlist:
-            video_states[video_id] = "finished"
-
-            if index not in completed_indices:
-                completed_indices.add(index)
-
-                if overall_task is not None:
-                    progress.update(
-                        overall_task,
-                        completed=len(completed_indices),
-                        detail=(
-                            f"{len(completed_indices)}/{total_videos} videos completed"
-                        ),
-                    )
-
+        if status != "downloading":
             return
 
-        if status == "downloading":
-            # A new playlist item has started.
-            if active_index != index:
-                if active_index is not None and playlist:
-                    completed_indices.add(active_index)
+        if playlist and current_index != index:
+            current_index = index
 
-                    if overall_task is not None:
-                        progress.update(
-                            overall_task,
-                            completed=len(completed_indices),
-                            detail=(
-                                f"{len(completed_indices)}"
-                                f"/{total_videos} videos completed"
-                            ),
-                        )
-
-                active_index = index
-
-                description = (
-                    f"Video {index}/{total_videos}: {video_title}"
-                    if playlist and total_videos
-                    else video_title
-                )
-
-                if current_task is None:
-                    current_task = progress.add_task(
-                        description,
-                        total=None,
-                        detail="Preparing download...",
-                    )
-                else:
-                    progress.update(
-                        current_task,
-                        description=description,
-                        total=None,
-                        completed=0,
-                        detail="Preparing download...",
-                    )
-
-            downloaded = data.get("downloaded_bytes", 0)
-            total = data.get("total_bytes") or data.get("total_bytes_estimate")
-
-            speed = data.get("speed")
-            eta = data.get("eta")
-
-            details = (
-                f"{format_bytes(downloaded)} / {format_bytes(total)}"
-                f" • {format_bytes(speed)}/s"
+            show_download_start(
+                index=index,
+                total_videos=total_videos,
+                title=video_title,
             )
 
-            if eta is not None:
-                details += f" • ETA {int(eta)}s"
+        elif not playlist:
+            current_index = index
 
-            progress.update(
-                current_task,
-                total=total,
-                completed=downloaded,
-                detail=details,
-            )
+        downloaded = data.get("downloaded_bytes", 0)
+        total = data.get("total_bytes") or data.get("total_bytes_estimate")
+        speed = data.get("speed")
+        eta = data.get("eta")
+
+        percentage = downloaded / total * 100 if total else 0.0
+
+        speed_text = (
+            f"{format_bytes(speed)}/s" if speed is not None else "Calculating speed..."
+        )
+
+        eta_text = f"{int(eta)}s" if eta is not None else None
+
+        update_download_display(
+            live=live,
+            percentage=percentage,
+            downloaded=format_bytes(downloaded),
+            total=format_bytes(total),
+            speed=speed_text,
+            eta=eta_text,
+        )
+
+    def post_hook(filename: str) -> None:
+        """Handle a video after its post-processing finishes."""
+        if not playlist or current_index is None:
+            return
+
+        if current_index in completed_indices:
+            return
+
+        completed_indices.add(current_index)
+
+        show_video_completed(
+            index=current_index,
+            total_videos=total_videos,
+        )
 
     options = {
         "outtmpl": output_template,
         "noplaylist": not playlist,
         "format": (f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]"),
         "progress_hooks": [progress_hook],
+        "post_hooks": [post_hook],
         "quiet": True,
         "no_warnings": True,
+        "noprogress": True,
     }
 
     with yt_dlp.YoutubeDL(options) as ydl:
@@ -160,13 +139,6 @@ def download_video(
                     1 for entry in info.get("entries", []) if entry is not None
                 )
 
-            overall_task = progress.add_task(
-                "Overall playlist progress",
-                total=total_videos,
-                completed=0,
-                detail=f"0/{total_videos} videos completed",
-            )
-
             show_playlist_info(
                 title=title,
                 total_videos=total_videos,
@@ -180,7 +152,10 @@ def download_video(
                 quality=quality,
             )
 
-        with progress:
+        with live:
             ydl.download([url])
 
-    show_success()
+    if playlist:
+        show_playlist_completed(len(completed_indices))
+    else:
+        show_success()
