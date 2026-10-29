@@ -124,7 +124,10 @@ def download_video(
     options = {
         "outtmpl": output_template,
         "noplaylist": not playlist,
-        "format": (f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]"),
+        "format": (
+            f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]/best"
+        ),
+        "remote_components": "ejs:github",
         "progress_hooks": [progress_hook],
         "post_hooks": [post_hook],
         # Download resilience
