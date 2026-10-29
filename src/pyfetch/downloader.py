@@ -121,58 +121,56 @@ def download_video(
             total_videos=total_videos,
         )
 
-        options = {
-            "outtmpl": output_template,
-            "noplaylist": not playlist,
-            "format": (
-                f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]"
-            ),
-            "progress_hooks": [progress_hook],
-            "post_hooks": [post_hook],
-            # Download resilience
-            "retries": 10,
-            "fragment_retries": 10,
-            "file_access_retries": 5,
-            "continuedl": True,
-            # Playlist should continue if one video fails
-            "ignoreerrors": playlist,
-            "quiet": True,
-            "no_warnings": True,
-            "noprogress": True,
-        }
+    options = {
+        "outtmpl": output_template,
+        "noplaylist": not playlist,
+        "format": (f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]"),
+        "progress_hooks": [progress_hook],
+        "post_hooks": [post_hook],
+        # Download resilience
+        "retries": 10,
+        "fragment_retries": 10,
+        "file_access_retries": 5,
+        "continuedl": True,
+        # Playlist should continue if one video fails
+        "ignoreerrors": playlist,
+        "quiet": True,
+        "no_warnings": True,
+        "noprogress": True,
+    }
 
-        if cookies_from_browser:
-            options["cookiesfrombrowser"] = (cookies_from_browser,)
-        with yt_dlp.YoutubeDL(options) as ydl:
-            info = ydl.extract_info(
-                url,
-                download=False,
+    if cookies_from_browser:
+        options["cookiesfrombrowser"] = (cookies_from_browser,)
+    with yt_dlp.YoutubeDL(options) as ydl:
+        info = ydl.extract_info(
+            url,
+            download=False,
+        )
+
+    if playlist and info.get("_type") == "playlist":
+        title = info.get("title", "Unknown Playlist")
+        total_videos = info.get("playlist_count")
+
+        if total_videos is None:
+            total_videos = sum(
+                1 for entry in info.get("entries", []) if entry is not None
             )
 
-        if playlist and info.get("_type") == "playlist":
-            title = info.get("title", "Unknown Playlist")
-            total_videos = info.get("playlist_count")
+        show_playlist_info(
+            title=title,
+            total_videos=total_videos,
+            quality=quality,
+        )
+    else:
+        title = info.get("title", "Unknown")
 
-            if total_videos is None:
-                total_videos = sum(
-                    1 for entry in info.get("entries", []) if entry is not None
-                )
+        show_video_info(
+            title=title,
+            quality=quality,
+        )
 
-            show_playlist_info(
-                title=title,
-                total_videos=total_videos,
-                quality=quality,
-            )
-        else:
-            title = info.get("title", "Unknown")
-
-            show_video_info(
-                title=title,
-                quality=quality,
-            )
-
-        with live:
-            ydl.download([url])
+    with live:
+        ydl.download([url])
 
     if playlist:
         completed_videos = len(completed_indices)
