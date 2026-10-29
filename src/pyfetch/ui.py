@@ -100,12 +100,15 @@ def show_video_completed(
     )
 
 
-def show_playlist_completed(total_videos: int) -> None:
+def show_playlist_completed(
+    completed_videos: int,
+    total_videos: int,
+) -> None:
     """Display playlist completion."""
     console.print(
         Panel(
             f"[bold green]✓ Playlist download completed[/bold green]\n"
-            f"[cyan]{total_videos}/{total_videos} videos[/cyan]",
+            f"[cyan]{completed_videos}/{total_videos} videos[/cyan]",
             border_style="green",
         )
     )
