@@ -37,6 +37,13 @@ def main(
             help="Download the entire playlist",
         ),
     ] = False,
+    cookies_from_browser: Annotated[
+        str | None,
+        typer.Option(
+            "--cookies-from-browser",
+            help="Browser to use for YouTube cookies (e.g. chrome, firefox, edge)",
+        ),
+    ] = None,
 ) -> None:
     """Download YouTube videos and playlists."""
     typer.echo("PyFetch")
@@ -48,6 +55,7 @@ def main(
         output_dir=str(output),
         quality=quality,
         playlist=playlist,
+        cookies_from_browser=cookies_from_browser,
     )
 
 

@@ -19,6 +19,7 @@ def download_video(
     output_dir: str = "downloads",
     quality: int = 720,
     playlist: bool = False,
+    cookies_from_browser: str | None = None,
 ) -> None:
     output_path = Path(output_dir).expanduser()
     output_path.mkdir(parents=True, exist_ok=True)
@@ -120,28 +121,33 @@ def download_video(
             total_videos=total_videos,
         )
 
-    options = {
-        "outtmpl": output_template,
-        "noplaylist": not playlist,
-        "format": (f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]"),
-        "progress_hooks": [progress_hook],
-        "post_hooks": [post_hook],
-        # Download resilience
-        "retries": 10,
-        "fragment_retries": 10,
-        "file_access_retries": 5,
-        "continuedl": True,
-        # Playlist should continue if one video fails
-        "ignoreerrors": playlist,
-        "quiet": True,
-        "no_warnings": True,
-        "noprogress": True,
-    }
-    with yt_dlp.YoutubeDL(options) as ydl:
-        info = ydl.extract_info(
-            url,
-            download=False,
-        )
+        options = {
+            "outtmpl": output_template,
+            "noplaylist": not playlist,
+            "format": (
+                f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]"
+            ),
+            "progress_hooks": [progress_hook],
+            "post_hooks": [post_hook],
+            # Download resilience
+            "retries": 10,
+            "fragment_retries": 10,
+            "file_access_retries": 5,
+            "continuedl": True,
+            # Playlist should continue if one video fails
+            "ignoreerrors": playlist,
+            "quiet": True,
+            "no_warnings": True,
+            "noprogress": True,
+        }
+
+        if cookies_from_browser:
+            options["cookiesfrombrowser"] = (cookies_from_browser,)
+        with yt_dlp.YoutubeDL(options) as ydl:
+            info = ydl.extract_info(
+                url,
+                download=False,
+            )
 
         if playlist and info.get("_type") == "playlist":
             title = info.get("title", "Unknown Playlist")
