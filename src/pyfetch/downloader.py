@@ -35,6 +35,7 @@ def download_video(
     current_index = None
     total_videos = 1
     completed_indices = set()
+    failed_indices = set()
 
     live = create_download_display()
 
@@ -60,6 +61,12 @@ def download_video(
 
         index = info_dict.get("playlist_index", 1)
         video_title = info_dict.get("title", "Downloading")
+
+        if status == "error":
+            if playlist:
+                failed_indices.add(index)
+
+            return
 
         if status != "downloading":
             return
@@ -119,11 +126,17 @@ def download_video(
         "format": (f"bestvideo[height<={quality}]+bestaudio/best[height<={quality}]"),
         "progress_hooks": [progress_hook],
         "post_hooks": [post_hook],
+        # Download resilience
+        "retries": 10,
+        "fragment_retries": 10,
+        "file_access_retries": 5,
+        "continuedl": True,
+        # Playlist should continue if one video fails
+        "ignoreerrors": playlist,
         "quiet": True,
         "no_warnings": True,
         "noprogress": True,
     }
-
     with yt_dlp.YoutubeDL(options) as ydl:
         info = ydl.extract_info(
             url,
