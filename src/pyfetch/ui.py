@@ -103,12 +103,17 @@ def show_video_completed(
 def show_playlist_completed(
     completed_videos: int,
     total_videos: int,
+    failed_videos: int,
 ) -> None:
     """Display playlist completion."""
+    status = f"[cyan]{completed_videos}/{total_videos} videos[/cyan]"
+
+    if failed_videos:
+        status += f"\n[red]{failed_videos} failed[/red]"
+
     console.print(
         Panel(
-            f"[bold green]✓ Playlist download completed[/bold green]\n"
-            f"[cyan]{completed_videos}/{total_videos} videos[/cyan]",
+            f"[bold green]✓ Playlist download completed[/bold green]\n{status}",
             border_style="green",
         )
     )

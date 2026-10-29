@@ -175,9 +175,13 @@ def download_video(
             ydl.download([url])
 
     if playlist:
+        completed_videos = len(completed_indices)
+        failed_videos = max(total_videos - completed_videos, 0)
+
         show_playlist_completed(
-            completed_videos=len(completed_indices),
+            completed_videos=completed_videos,
             total_videos=total_videos,
+            failed_videos=failed_videos,
         )
     else:
         show_success()
