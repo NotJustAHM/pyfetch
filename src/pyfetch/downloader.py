@@ -140,6 +140,14 @@ def download_video(
         "quiet": True,
         "no_warnings": True,
         "noprogress": True,
+        "extractor_args": {
+            "youtube": {
+                "player_js_variant": ["tv"],
+            },
+        },
+        "sleep_interval": 5,
+        "max_sleep_interval": 10,
+        "sleep_requests": 1,
     }
 
     if cookies_from_browser:
